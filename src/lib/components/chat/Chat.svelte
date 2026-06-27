@@ -30,6 +30,7 @@
 		socket,
 		audioQueue,
 		showControls,
+		showCanvas,
 		showCallOverlay,
 		currentChatPage,
 		temporaryChatEnabled,
@@ -104,6 +105,7 @@
 	import Messages from '$lib/components/chat/Messages.svelte';
 	import Navbar from '$lib/components/chat/Navbar.svelte';
 	import ChatControls from './ChatControls.svelte';
+	import Canvas from './canvas/Canvas.svelte';
 	import EventConfirmDialog from '../common/ConfirmDialog.svelte';
 	import DeleteConfirmDialog from '../common/ConfirmDialog.svelte';
 	import Placeholder from './Placeholder.svelte';
@@ -3249,6 +3251,23 @@
 						{/if}
 					</div>
 				</Pane>
+
+				{#if $showCanvas}
+					<PaneResizer
+						class="relative flex items-center justify-center group border-l border-gray-50 dark:border-gray-850/30 hover:border-gray-200 dark:hover:border-gray-800 transition z-20"
+					>
+						<div
+							class="absolute -left-1.5 -right-1.5 -top-0 -bottom-0 z-20 cursor-col-resize bg-transparent"
+						/>
+					</PaneResizer>
+					<Pane
+						defaultSize={50}
+						minSize={30}
+						class="z-10 bg-white dark:bg-gray-850 h-full flex relative"
+					>
+						<Canvas />
+					</Pane>
+				{/if}
 
 				<ChatControls
 					bind:this={controlPaneComponent}

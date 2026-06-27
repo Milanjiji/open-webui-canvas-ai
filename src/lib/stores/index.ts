@@ -110,6 +110,9 @@ export const selectedTerminalId: Writable<string | null> = writable(null);
 export const artifactCode = writable(null);
 export const artifactContents = writable(null);
 
+export const showCanvas = writable(false);
+export const canvasElements = writable<any[]>([]);
+
 export const embed = writable(null);
 
 export const temporaryChatEnabled = writable(false);

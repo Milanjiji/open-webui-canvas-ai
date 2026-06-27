@@ -37,7 +37,9 @@
 		showFileNavPath,
 		showFileNavDir,
 		pyodideWorker,
-		desktopEvent
+		desktopEvent,
+		showCanvas,
+		canvasElements
 	} from '$lib/stores';
 	import { getFileContentById } from '$lib/apis/files';
 	import { goto } from '$app/navigation';
@@ -518,6 +520,17 @@
 			} else if (type === 'execute:tool') {
 				console.log('execute:tool', data);
 				executeTool(data, cb, event.chat_id);
+				return;
+			} else if (type === 'execute:canvas') {
+				console.log('execute:canvas', data);
+				showCanvas.set(true);
+				canvasElements.update((elements) => [
+					...elements,
+					{ action: data.action, params: data.params }
+				]);
+				if (cb) {
+					cb({ success: true, result: 'Canvas opened and updated' });
+				}
 				return;
 			} else if (type === 'request:chat:completion') {
 				console.log(data, $socket.id);

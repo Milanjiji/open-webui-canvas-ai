@@ -45,6 +45,7 @@ from open_webui.models.access_grants import AccessGrants
 from open_webui.models.groups import Groups
 from open_webui.models.tools import Tools
 from open_webui.models.users import UserModel
+from open_webui.tools.canvas import canvas
 from open_webui.tools.builtin import (
     add_memory,
     calculate_timestamp,
@@ -594,6 +595,10 @@ async def get_builtin_tools(
     # Skills tools - view_skill allows model to load full skill instructions on demand
     if extra_params.get('__skill_ids__'):
         builtin_functions.append(view_skill)
+
+    # Canvas tools - render drawing canvas dynamically
+    if is_builtin_tool_enabled('canvas'):
+        builtin_functions.append(canvas)
 
     # Task management - break down complex work into trackable steps
     if is_builtin_tool_enabled('tasks'):

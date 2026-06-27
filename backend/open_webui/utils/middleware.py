@@ -4143,7 +4143,12 @@ async def streaming_chat_response_handler(response, ctx):
                                     delta_tool_calls = delta.get('tool_calls', None)
                                     if delta_tool_calls:
                                         for delta_tool_call in delta_tool_calls:
-                                            tool_call_index = delta_tool_call.get('index')
+                                            # Default index to 0 when absent.
+                                            # Gemini's SSE format omits 'index' from tool_call
+                                            # deltas, unlike the OpenAI spec which requires it.
+                                            # Without this fallback the entire accumulation block
+                                            # is silently skipped for every Gemini tool call.
+                                            tool_call_index = delta_tool_call.get('index', 0)
 
                                             if tool_call_index is not None:
                                                 # Check if the tool call already exists
@@ -4155,6 +4160,7 @@ async def streaming_chat_response_handler(response, ctx):
 
                                                 if current_response_tool_call is None:
                                                     # Add the new tool call
+                                                    delta_tool_call.setdefault('index', tool_call_index)
                                                     delta_tool_call.setdefault('function', {})
                                                     delta_tool_call['function'].setdefault('name', '')
                                                     delta_tool_call['function'].setdefault('arguments', '')
@@ -4475,6 +4481,14 @@ async def streaming_chat_response_handler(response, ctx):
 
                     if response_tool_calls:
                         tool_calls.append(_split_tool_calls(response_tool_calls))
+                        # TEMPORARY DEVELOPMENT DEBUG LOG FOR PARSED TOOL CALLS
+                        # TODO: Remove after validating Gemini tool selection
+                        for tc in response_tool_calls:
+                            func = tc.get('function', {})
+                            name = func.get('name')
+                            args = func.get('arguments')
+                            log.warning(f"TOOL NAME: {name}")
+                            log.warning(f"TOOL ARGUMENTS: {args}")
 
                     # Responses API path: extract function_call items from output
                     if not response_tool_calls and output:
@@ -4538,6 +4552,8 @@ async def streaming_chat_response_handler(response, ctx):
                     tool_call_iterations += 1
 
                     response_tool_calls = tool_calls.pop(0)
+                    # TEMPORARY DEVELOPMENT DEBUG LOG FOR STEP 1
+                    log.warning("STEP 1: Parsed tool calls")
 
                     # Append function_call items for each tool call
                     # (Responses API already has them from streaming, so skip duplicates)
@@ -4575,6 +4591,8 @@ async def streaming_chat_response_handler(response, ctx):
                         tool_call_id = tool_call.get('id', '')
                         tool_function_name = tool_call.get('function', {}).get('name', '')
                         tool_args = tool_call.get('function', {}).get('arguments', '{}')
+                        # TEMPORARY DEVELOPMENT DEBUG LOG FOR STEP 2
+                        log.warning(f"STEP 2: Executing tool: {tool_function_name}")
 
                         tool_function_params = {}
                         if tool_args and tool_args.strip():
@@ -4632,6 +4650,8 @@ async def streaming_chat_response_handler(response, ctx):
                                             },
                                         }
                                     )
+                                    # TEMPORARY DEVELOPMENT DEBUG LOG FOR STEP 3 (direct tool)
+                                    log.warning(f"STEP 3: Tool execution completed (direct tool). Result: {tool_result}")
 
                                 else:
                                     tool_function = await get_updated_tool_function(
@@ -4643,11 +4663,15 @@ async def streaming_chat_response_handler(response, ctx):
                                     )
 
                                     tool_result = await tool_function(**tool_function_params)
+                                    # TEMPORARY DEVELOPMENT DEBUG LOG FOR STEP 3 (backend tool)
+                                    log.warning(f"STEP 3: Tool execution completed. Result: {tool_result}")
 
                             except Exception as e:
                                 tool_result = str(e)
+                                log.warning(f"STEP 3 SKIP/ERROR: Tool execution failed with exception: {e}")
                         else:
                             tool_result = f'Error: Tool "{tool_function_name}" not found.'
+                            log.warning(f"STEP 2 SKIP: Tool '{tool_function_name}' not found in active tools list")
 
                         tool_result, tool_result_files, tool_result_embeds = await process_tool_result(
                             request,

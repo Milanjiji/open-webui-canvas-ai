@@ -1670,6 +1670,7 @@ async def chat_completion(
     form_data: dict,
     user=Depends(get_verified_user),
 ):
+    log.warning("REACHED HERE: main.py::chat_completion")
     if not request.app.state.MODELS:
         await get_all_models(request, user=user)
 
@@ -1789,14 +1790,17 @@ async def chat_completion(
             'params': {
                 'stream_delta_chunk_size': stream_delta_chunk_size,
                 'reasoning_tags': reasoning_tags,
-                'function_calling': (
-                    'native'
-                    if (
-                        form_data.get('params', {}).get('function_calling') == 'native'
-                        or model_info_params.get('function_calling') == 'native'
-                    )
-                    else 'default'
-                ),
+                # TEMPORARY DEVELOPMENT OVERRIDE: Force native function calling to test Canvas Tool architecture.
+                # TODO: Restore the original configuration resolution after resolving UI model capabilities issues.
+                'function_calling': 'native',
+                # 'function_calling': (
+                #     'native'
+                #     if (
+                #         form_data.get('params', {}).get('function_calling') == 'native'
+                #         or model_info_params.get('function_calling') == 'native'
+                #     )
+                #     else 'default'
+                # ),
             },
         }
 

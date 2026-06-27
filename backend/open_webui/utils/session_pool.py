@@ -113,6 +113,8 @@ async def stream_wrapper(response, session=None, content_handler=None):
     try:
         stream = content_handler(response.content) if content_handler else response.content
         async for chunk in stream:
+            # TEMPORARY DEVELOPMENT DEBUG LOGGING FOR RAW STREAM CHUNK
+            print(f"RAW CHUNK: {chunk.decode('utf-8', 'ignore')}", flush=True)
             yield chunk
     finally:
         await cleanup_response(response, session)

@@ -17,6 +17,7 @@
 		showCallOverlay,
 		showArtifacts,
 		showEmbeds,
+		showCanvas,
 		settings,
 		showFileNavPath,
 		selectedTerminalId,
@@ -27,6 +28,7 @@
 	import { toast } from 'svelte-sonner';
 
 	import Controls from './Controls/Controls.svelte';
+	import Canvas from './canvas/Canvas.svelte';
 	import CallOverlay from './MessageInput/CallOverlay.svelte';
 	import Drawer from '../common/Drawer.svelte';
 	import Artifacts from './Artifacts.svelte';
@@ -264,13 +266,14 @@
 		}
 		showArtifacts.set(false);
 		showEmbeds.set(false);
+		showCanvas.set(false);
 		if ($showCallOverlay) showCallOverlay.set(false);
 	};
 
 	$: if (paneReady && !chatId) closeHandler();
 
 	// Helper: is a "special" full-screen panel active?
-	$: specialPanel = $showCallOverlay || $showArtifacts || $showEmbeds;
+	$: specialPanel = $showCallOverlay || $showArtifacts || $showEmbeds || $showCanvas;
 </script>
 
 {#if !largeScreen}

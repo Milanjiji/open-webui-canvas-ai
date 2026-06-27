@@ -1055,6 +1055,7 @@ async def generate_chat_completion(
     form_data: dict,
     user=Depends(get_verified_user),
 ):
+    log.warning("REACHED HERE: routers/openai.py::generate_chat_completion")
     # NOTE: We intentionally do NOT use Depends(get_async_session) here.
     # Database operations (get_model_by_id, AccessGrants.has_access) manage their own short-lived sessions.
     # This prevents holding a connection during the entire LLM call (30-60+ seconds),
@@ -1202,6 +1203,14 @@ async def generate_chat_completion(
                     part.get('text', '') for part in message['content'] if part.get('type') in ('input_text', 'text')
                 )
 
+    # TEMPORARY DEVELOPMENT DEBUG LOGGING FOR OUTGOING LLM PROVIDER REQUEST
+    # TODO: Remove after validating canvas tool schema propagation
+    log.warning("====== [DEBUG OUTGOING PROVIDER REQUEST] ======")
+    log.warning(f"Final metadata: {metadata}")
+    # log.warning(f"Complete tools array in payload: {payload.get('tools')}")
+    # log.warning(f"Complete payload object: {payload}")
+    log.warning("===============================================")
+
     payload = json.dumps(payload)
 
     r = None
@@ -1220,6 +1229,20 @@ async def generate_chat_completion(
             ssl=AIOHTTP_CLIENT_SESSION_SSL,
             timeout=aiohttp.ClientTimeout(total=AIOHTTP_CLIENT_TIMEOUT),
         )
+
+        # TEMPORARY DEVELOPMENT DEBUG LOGGING FOR RAW PROVIDER RESPONSE
+        # TODO: Remove after inspecting tool call payload
+        is_sse = 'text/event-stream' in r.headers.get('Content-Type', '')
+        log.warning(f"====== [DEBUG PROVIDER RESPONSE] HTTP Status: {r.status}, SSE: {is_sse} ======")
+        if not is_sse:
+            try:
+                raw_body = await r.text()
+                log.warning(f"Raw response body: {raw_body}")
+            except Exception as log_err:
+                log.warning(f"Error reading response body: {log_err}")
+        else:
+            log.warning("Streaming response (SSE). Chunks will print as they stream.")
+        log.warning("================================================================")
 
         # Check if response is SSE
         if 'text/event-stream' in r.headers.get('Content-Type', ''):
